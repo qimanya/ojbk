@@ -4,10 +4,6 @@
     {
       "src": "/api/socket",
       "dest": "src/pages/api/socket.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/"
     }
   ],
   "env": {

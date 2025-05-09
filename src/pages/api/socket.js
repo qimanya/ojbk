@@ -15,7 +15,7 @@ export default function SocketHandler(req, res) {
             }
         });
 
-        // Initialize game socket handlers
+        // 初始化 socket 事件，所有状态都用 Firestore 持久化
         initSocket(io);
     }
 

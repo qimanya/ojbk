@@ -40,7 +40,7 @@ const ROLE_DESCRIPTIONS = {
 const socket = io(SOCKET_URL, {
     path: '/api/socket',
     addTrailingSlash: false,
-    transports: ['websocket'],
+    transports: ['polling'],
     autoConnect: true,
     reconnection: true,
     reconnectionAttempts: 10,

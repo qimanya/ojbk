@@ -1,19 +1,9 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    },
-    {
-      "src": "src/server.js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/api/socket",
-      "dest": "src/server.js"
+      "dest": "src/pages/api/socket.js"
     },
     {
       "src": "/(.*)",
@@ -22,11 +12,5 @@
   ],
   "env": {
     "NEXT_PUBLIC_SOCKET_URL": "/api/socket"
-  },
-  "functions": {
-    "src/pages/api/socket.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
   }
 } 

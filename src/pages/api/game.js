@@ -1,4 +1,17 @@
 import { Server } from "socket.io";
+import { db } from '../../utils/firebaseAdmin';
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+export const db = admin.firestore();
 
 let gameState = {
     pressure: 0,
@@ -472,7 +485,7 @@ export function initSocket(server) {
         headers["Access-Control-Allow-Credentials"] = "true";
     });
 
-    io.on("connection", (socket) => {
+    io.on("connection", async (socket) => {
         console.log("New player connected:", socket.id);
         console.log("Current connected clients:", io.engine.clientsCount);
         
@@ -510,6 +523,23 @@ export function initSocket(server) {
             total_players: gameState.players.length
         });
 
+        // Read game state from Firestore
+        const gameDoc = await db.collection('games').doc('main').get();
+        if (gameDoc.exists) {
+            gameState = gameDoc.data();
+        } else {
+            // Initialize default game state if no document exists
+            gameState = {
+                pressure: 0,
+                max_pressure: 10,
+                active_crises: [],
+                current_player: 1,
+                players: [],
+                started: false,
+                failed: false
+            };
+        }
+
         socket.emit('game_state', getPlayerView(playerId));
         socket.broadcast.emit('player_connected', {
             total_players: gameState.players.length
@@ -528,9 +558,9 @@ export function initSocket(server) {
             }
         });
 
-        socket.on("play_card", (data) => {
+        socket.on("play_card", async (data) => {
             console.log(`Player ${data.player_id} playing card ${data.card_index}`);
-            handlePlayCard(data, io);
+            await handlePlayCard(data, io);
         });
 
         socket.on("restart_game", () => {
@@ -691,7 +721,7 @@ function refillHand(player) {
     }
 }
 
-function handlePlayCard(data, io) {
+async function handlePlayCard(data, io) {
     const { player_id, card_index } = data;
     const player = gameState.players.find(p => p.id === player_id);
 
@@ -753,4 +783,8 @@ function handlePlayCard(data, io) {
     gameState.players.forEach(player => {
         io.to(player.socket_id).emit('game_state', getPlayerView(player.id));
     });
+
+    // Update game state in Firestore
+    await db.collection('games').doc('main').set(gameState);
+    io.emit('game_state', gameState);
 }
